@@ -1,0 +1,20 @@
+@use "./Button.scss";
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+html,body,:root{
+    width: 100%;
+   background-color: rgb(49, 48, 48);
+   color: whitesmoke;
+   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+ a {
+   color:  rgb(209, 115, 8);
+    text-decoration: none;
+    outline: none;
+    font-weight: bold;
+ }   
+
