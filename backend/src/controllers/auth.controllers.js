@@ -101,16 +101,20 @@ const getMe = async (req,res) =>{
 
 const userLogout = async (req,res) =>{
     try {
-       const token= req.cookies.jwtToken
-    
-        res.clearCookie("jwtToken")
+        const token= req.cookies.jwtToken;
+        res.clearCookie("jwtToken");
 
+        if (token) {
+            try {
+                await redis.set(token, Date.now().toString(), "EX", 60 * 60);
+            } catch (redisErr) {
+                console.error("Redis blacklist error on logout:", redisErr);
+            }
+        }
 
-       await redis.set(token,Date.now().toString(),"EX",60*60)
-
-        return res.status(201).json({message:"User logged out successfully"})
+        return res.status(200).json({message:"User logged out successfully"});
     } catch (error) {
-        return res.status(500).json({message:"Something went wrong"})
+        return res.status(500).json({message:"Something went wrong"});
     }
 }
 

@@ -4,7 +4,7 @@ import {
   getMe,
   registerUser,
   logoutUser
-} from "../services/auth.api";
+} from "../services/auth.api.jsx";
 
 import { useContext, useEffect } from "react";
 import { AuthContext } from "../auth.context";
@@ -47,9 +47,12 @@ const useAuth = () => {
 
     try {
       await logoutUser();
-      setUser(null);
+    } catch (err) {
+      console.warn("Logout request finished with error:", err);
     } finally {
+      setUser(null);
       setLoading(false);
+      window.location.href = "/login";
     }
   };
 
@@ -60,15 +63,16 @@ const useAuth = () => {
       const data = await getMe();
       setUser(data.user);
       return data;
+    } catch (err) {
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-
-useEffect(()=>{
-   getMeApi ()
-},[])
+  useEffect(() => {
+    getMeApi();
+  }, []);
 
   return {
     user,
