@@ -7,33 +7,41 @@ export default function FaceExpression({ onMoodDetect, onClick }) {
   const streamRef = useRef(null);
 
   const [expression, setExpression] = useState("Detecting...");
+  const [isDetecting, setIsDetecting] = useState(false);
 
   useEffect(() => {
-    init({ landmarkerRef, videoRef, streamRef });
+    let isMounted = true;
+
+    // Initialization with safety handling
+    init({ landmarkerRef, videoRef, streamRef }).catch((err) => {
+      if (isMounted) console.error("Init Error:", err);
+    });
 
     return () => {
+      isMounted = false;
+
+      // Close MediaPipe landmarker on unmount
       if (landmarkerRef.current) {
         landmarkerRef.current.close();
+        landmarkerRef.current = null;
       }
 
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject
-          .getTracks()
-          .forEach((track) => track.stop());
+      // Safely stop all camera stream tracks
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
     };
   }, []);
 
-  const [isDetecting, setIsDetecting] = useState(false);
-
   async function handleClick() {
     setIsDetecting(true);
     try {
-      // MediaPipe detect call
+      // Run facial expression detection
       const detectedExpression = await detect({ landmarkerRef, videoRef, setExpression });
       console.log("Detected Mood:", detectedExpression);
 
-      // Parent component callback (supports both onMoodDetect and onClick)
+      // Trigger parent callback function
       const callback = onMoodDetect || onClick;
       if (detectedExpression && callback) {
         callback(detectedExpression);

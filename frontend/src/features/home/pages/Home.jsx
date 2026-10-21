@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import FaceExpression from '../../expression/components/FaceExpression';
 import Player from '../components/Player';
+import MoodHistoryCard from '../components/MoodHistoryCard';
+import { getStoredMoodHistory, recordMoodDetection } from '../utils/moodStorage';
 import { useSong } from '../hooks/useSong';
 import { searchSongsApi } from '../service/song.api';
 import useAuth from '../../auth/hooks/useAuth';
@@ -73,6 +75,7 @@ const Home = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [moodHistory, setMoodHistory] = useState(() => getStoredMoodHistory());
 
   // Active songs list: dynamic YouTube playlist if available, otherwise default screenshot songs
   const activePlaylist = (playlist && playlist.length > 0) ? playlist : DEFAULT_PLAYLIST;
@@ -209,6 +212,10 @@ const Home = () => {
             {/* MediaPipe Camera Viewfinder & Detection Trigger */}
             <FaceExpression 
               onMoodDetect={(detectedMood) => {
+                const updated = recordMoodDetection(detectedMood);
+                if (updated && updated.length > 0) {
+                  setMoodHistory(updated);
+                }
                 handleGetSong({ mood: detectedMood });
               }}
             />
@@ -266,85 +273,8 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Card 2: Today's Mood History */}
-          <div className="history-card">
-            <div className="history-header-row">
-              <div className="card-top-header" style={{ marginBottom: 0 }}>
-                <div className="icon-badge">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10" />
-                    <line x1="12" y1="20" x2="12" y2="4" />
-                    <line x1="6" y1="20" x2="6" y2="14" />
-                  </svg>
-                </div>
-                <h3 className="card-title-text">Today's Mood History</h3>
-              </div>
-
-              {/* Legend */}
-              <div className="history-legend">
-                <div className="legend-item">
-                  <span className="dot yellow" /> Happy
-                </div>
-                <div className="legend-item">
-                  <span className="dot purple" /> Surprised
-                </div>
-                <div className="legend-item">
-                  <span className="dot cyan" /> Sad
-                </div>
-              </div>
-            </div>
-
-            {/* Interactive SVG Spline Line Graph */}
-            <div className="chart-container">
-              <svg viewBox="0 0 460 75" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="historyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#A855F7" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#A855F7" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-
-                {/* Subtle Horizontal Grid lines */}
-                <line x1="10" y1="15" x2="450" y2="15" className="chart-grid-line" />
-                <line x1="10" y1="35" x2="450" y2="35" className="chart-grid-line" />
-                <line x1="10" y1="55" x2="450" y2="55" className="chart-grid-line" />
-
-                {/* Gradient area underneath curve */}
-                <path
-                  d="M 15 50 C 40 28, 55 16, 75 16 C 95 16, 115 32, 135 32 C 155 32, 175 46, 195 46 C 215 46, 235 26, 255 26 C 275 26, 295 36, 315 36 C 335 36, 355 20, 375 20 C 395 20, 420 14, 442 14 L 442 70 L 15 70 Z"
-                  fill="url(#historyGradient)"
-                />
-
-                {/* Smooth purple spline line */}
-                <path
-                  d="M 15 50 C 40 28, 55 16, 75 16 C 95 16, 115 32, 135 32 C 155 32, 175 46, 195 46 C 215 46, 235 26, 255 26 C 275 26, 295 36, 315 36 C 335 36, 355 20, 375 20 C 395 20, 420 14, 442 14"
-                  className="chart-curve"
-                />
-
-                {/* Node Circles */}
-                <circle cx="15" cy="50" r="4" fill="#06B6D4" stroke="#ffffff" strokeWidth="1.5" className="chart-node" />
-                <circle cx="75" cy="16" r="4" fill="#FACC15" stroke="#ffffff" strokeWidth="1.5" className="chart-node" />
-                <circle cx="135" cy="32" r="4" fill="#A855F7" stroke="#ffffff" strokeWidth="1.5" className="chart-node" />
-                <circle cx="195" cy="46" r="4" fill="#06B6D4" stroke="#ffffff" strokeWidth="1.5" className="chart-node" />
-                <circle cx="255" cy="26" r="4" fill="#A855F7" stroke="#ffffff" strokeWidth="1.5" className="chart-node" />
-                <circle cx="315" cy="36" r="4" fill="#A855F7" stroke="#ffffff" strokeWidth="1.5" className="chart-node" />
-                <circle cx="375" cy="20" r="4" fill="#FACC15" stroke="#ffffff" strokeWidth="1.5" className="chart-node" />
-                <circle cx="442" cy="14" r="4" fill="#A855F7" stroke="#ffffff" strokeWidth="1.5" className="chart-node" />
-              </svg>
-
-              {/* Timestamp Labels along X axis */}
-              <div className="chart-timestamps">
-                <span>8 AM</span>
-                <span>10 AM</span>
-                <span>12 PM</span>
-                <span>2 PM</span>
-                <span>4 PM</span>
-                <span>6 PM</span>
-                <span>8 PM</span>
-                <span>10 PM</span>
-              </div>
-            </div>
-          </div>
+          {/* Card 2: Today's / 7-Day Dynamic Mood History */}
+          <MoodHistoryCard history={moodHistory} />
 
           {/* Card 3: Now Playing YouTube Player */}
           <Player 

@@ -3,7 +3,6 @@ import {
     FilesetResolver
 } from "@mediapipe/tasks-vision";
 
-
 export const init = async ({ landmarkerRef, videoRef, streamRef }) => {
     const vision = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
@@ -22,9 +21,17 @@ export const init = async ({ landmarkerRef, videoRef, streamRef }) => {
         }
     );
 
-    streamRef.current = await navigator.mediaDevices.getUserMedia({ video: true });
-    videoRef.current.srcObject = streamRef.current;
-    await videoRef.current.play();
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    streamRef.current = stream;
+
+    if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        try {
+            await videoRef.current.play();
+        } catch (err) {
+            console.log("Play interrupted:", err);
+        }
+    }
 };
 
 export const detect = ({ landmarkerRef, videoRef, setExpression }) => {
@@ -36,7 +43,7 @@ export const detect = ({ landmarkerRef, videoRef, setExpression }) => {
     );
 
     if (results.faceBlendshapes?.length > 0) {
-        const blendshapes = results.faceBlendshapes[ 0 ].categories;
+        const blendshapes = results.faceBlendshapes[0].categories;
 
         const getScore = (name) =>
             blendshapes.find((b) => b.categoryName === name)?.score || 0;
@@ -47,8 +54,6 @@ export const detect = ({ landmarkerRef, videoRef, setExpression }) => {
         const browUp = getScore("browInnerUp");
         const frownLeft = getScore("mouthFrownLeft");
         const frownRight = getScore("mouthFrownRight");
-
-        console.log(getScore("mouthFrownLeft"))
 
         let currentExpression = "Neutral";
 
@@ -62,6 +67,6 @@ export const detect = ({ landmarkerRef, videoRef, setExpression }) => {
 
         setExpression(currentExpression);
 
-        return currentExpression
+        return currentExpression;
     }
 };

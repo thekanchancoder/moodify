@@ -508,12 +508,52 @@ $radius-sm: 0.65rem;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+
+      .history-header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+      }
+
+      .history-toggle-pill {
+        display: flex;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 9999px;
+        padding: 2px;
+        gap: 2px;
+
+        .toggle-btn {
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.68rem;
+          font-weight: 500;
+          padding: 3px 8px;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &:hover {
+            color: #ffffff;
+          }
+
+          &.active {
+            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+          }
+        }
+      }
 
       .history-legend {
         display: flex;
         align-items: center;
-        gap: 0.85rem;
-        font-size: 0.75rem;
+        gap: 0.75rem;
+        font-size: 0.72rem;
         color: $text-secondary;
 
         .legend-item {
@@ -540,6 +580,51 @@ $radius-sm: 0.65rem;
       display: flex;
       flex-direction: column;
 
+      .chart-tooltip-bubble {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        background: rgba(18, 14, 38, 0.92);
+        border: 1px solid rgba(168, 85, 247, 0.4);
+        border-radius: 8px;
+        padding: 4px 8px;
+        pointer-events: none;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 10px rgba(168, 85, 247, 0.25);
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        white-space: nowrap;
+        animation: tooltipPop 0.15s ease-out;
+
+        .tooltip-mood {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .tooltip-time {
+          font-size: 0.65rem;
+          color: rgba(255, 255, 255, 0.6);
+          margin-top: 1px;
+        }
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -4px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 4px solid transparent;
+          border-right: 4px solid transparent;
+          border-top: 4px solid rgba(168, 85, 247, 0.4);
+        }
+      }
+
       svg {
         width: 100%;
         height: 65px;
@@ -552,11 +637,16 @@ $radius-sm: 0.65rem;
         stroke-dasharray: 3 3;
       }
 
+      .chart-area-fill {
+        transition: d 0.3s ease;
+      }
+
       .chart-curve {
         fill: none;
         stroke: #a855f7;
         stroke-width: 2.5;
         filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+        transition: d 0.3s ease;
       }
 
       .chart-node {
@@ -564,8 +654,8 @@ $radius-sm: 0.65rem;
         cursor: pointer;
 
         &:hover {
-          r: 6;
-          filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+          r: 6.5;
+          filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
         }
       }
 
@@ -578,7 +668,27 @@ $radius-sm: 0.65rem;
         font-weight: 500;
         padding: 0 4px;
         box-sizing: border-box;
+
+        span {
+          cursor: pointer;
+          transition: color 0.15s ease;
+
+          &:hover {
+            color: rgba(255, 255, 255, 0.85);
+          }
+        }
       }
+    }
+  }
+
+  @keyframes tooltipPop {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -90%) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -100%) scale(1);
     }
   }
 
@@ -1028,4 +1138,102 @@ $radius-sm: 0.65rem;
 @keyframes eqPulse {
   0% { height: 3px; }
   100% { height: 14px; }
+}
+
+
+/* =====================================
+   MOODIFY RESPONSIVE MOBILE VIEW
+===================================== */
+
+@media (max-width: 480px) {
+  .moodify-dashboard {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .dashboard-grid {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .dashboard-grid > *,
+  .expression-column,
+  .center-column,
+  .playlist-column {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .expression-card,
+  .mood-analysis-card,
+  .history-card,
+  .now-playing-card,
+  .playlist-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .analysis-content,
+  .player-main-body {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mood-info-box,
+  .track-details-controls {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mood-title-row {
+    flex-wrap: wrap;
+  }
+
+  .video-viewfinder-box {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .video-viewfinder-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .chart-container {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .chart-container svg {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .track-title,
+  .track-artist {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dashboard-navbar {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-navbar .navbar-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 }
