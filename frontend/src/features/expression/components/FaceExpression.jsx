@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { detect, init } from "../utils/utils";
+import { detect, init, stop } from "../utils/utils";
 
 export default function FaceExpression({ onMoodDetect, onClick }) {
   const videoRef = useRef(null);
   const landmarkerRef = useRef(null);
   const streamRef = useRef(null);
 
-  const [expression, setExpression] = useState("Detecting...");
+  const [expression, setExpression] = useState("");
   const [isDetecting, setIsDetecting] = useState(false);
 
   useEffect(() => {
@@ -19,18 +19,7 @@ export default function FaceExpression({ onMoodDetect, onClick }) {
 
     return () => {
       isMounted = false;
-
-      // Close MediaPipe landmarker on unmount
-      if (landmarkerRef.current) {
-        landmarkerRef.current.close();
-        landmarkerRef.current = null;
-      }
-
-      // Safely stop all camera stream tracks
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
+      stop({ landmarkerRef, streamRef, videoRef });
     };
   }, []);
 
@@ -58,7 +47,7 @@ export default function FaceExpression({ onMoodDetect, onClick }) {
       <div className="video-viewfinder-box">
         <div className="camera-badge">
           <span className="green-dot" />
-          Camera On
+          {expression ? `Mood: ${expression.toUpperCase()}` : "Camera On"}
         </div>
         <div className="corner-marker top-left" />
         <div className="corner-marker top-right" />

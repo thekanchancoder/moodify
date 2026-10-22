@@ -4,7 +4,7 @@ import {
 } from "@mediapipe/tasks-vision";
 
 export const init = async ({ landmarkerRef, videoRef, streamRef }) => {
-    // 1. Prevent duplicate initialization if landmarker already exists
+    // 1. Prevent duplicate initialization
     if (landmarkerRef.current) return;
 
     const vision = await FilesetResolver.forVisionTasks(
@@ -24,7 +24,7 @@ export const init = async ({ landmarkerRef, videoRef, streamRef }) => {
         }
     );
 
-    // 2. Prevent creating duplicate webcam streams
+    // 2. Prevent duplicate webcam streams
     if (!streamRef.current) {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         streamRef.current = stream;
@@ -40,46 +40,93 @@ export const init = async ({ landmarkerRef, videoRef, streamRef }) => {
     }
 };
 
-export const detect = ({ landmarkerRef, videoRef, setExpression }) => {
+export const detect = async ({ landmarkerRef, videoRef, setExpression }) => {
     if (!landmarkerRef.current || !videoRef.current) return "Neutral";
 
     // Ensure video is ready before detecting
     if (videoRef.current.readyState < 2) return "Neutral";
 
-    const results = landmarkerRef.current.detectForVideo(
-        videoRef.current,
-        performance.now()
-    );
+    const sampleFrame = () => {
+        try {
+            const results = landmarkerRef.current.detectForVideo(
+                videoRef.current,
+                performance.now()
+            );
 
-    if (results.faceBlendshapes?.length > 0) {
-        const blendshapes = results.faceBlendshapes[0].categories;
+            if (!results.faceBlendshapes?.length) return null;
 
-        const getScore = (name) =>
-            blendshapes.find((b) => b.categoryName === name)?.score || 0;
+            const blendshapes = results.faceBlendshapes[0].categories;
+            const getScore = (name) =>
+                blendshapes.find((b) => b.categoryName === name)?.score || 0;
 
-        const smileLeft = getScore("mouthSmileLeft");
-        const smileRight = getScore("mouthSmileRight");
-        const jawOpen = getScore("jawOpen");
-        const browUp = getScore("browInnerUp");
-        const frownLeft = getScore("mouthFrownLeft");
-        const frownRight = getScore("mouthFrownRight");
+            // BlendShape Scores
+            const smileLeft = getScore("mouthSmileLeft");
+            const smileRight = getScore("mouthSmileRight");
+            const jawOpen = getScore("jawOpen");
+            const browUp = getScore("browInnerUp");
+            const frownLeft = getScore("mouthFrownLeft");
+            const frownRight = getScore("mouthFrownRight");
+            // 1. HAPPY: Prominent smile
+            if (smileLeft > 0.35 && smileRight > 0.35) {
+                return "happy";
+            }
 
-        let currentExpression = "Neutral";
+            // 2. SURPRISED: Open jaw with raised eyebrows
+            if (jawOpen > 0.25 && browUp > 0.2) {
+                return "surprised";
+            }
 
-        if (smileLeft > 0.4 && smileRight > 0.4) {
-            currentExpression = "happy";
-        } else if (jawOpen > 0.25 && browUp > 0.2) {
-            currentExpression = "surprised";
-        } else if (frownLeft > 0.15 && frownRight > 0.15) {
-            currentExpression = "sad";
+            // 3. SAD:
+            if (frownLeft > 0.0001 && frownRight > 0.0001) {
+                return "sad";
+            }
+
+            return "Neutral";
+        } catch (err) {
+            return null;
         }
+    };
 
-        if (setExpression) {
-            setExpression(currentExpression);
+    // Sample across 4 quick frames (~250ms) to ensure stable and reliable detection
+    const counts = { happy: 0, sad: 0, surprised: 0, Neutral: 0 };
+    for (let i = 0; i < 4; i++) {
+        const exp = sampleFrame();
+        if (exp && counts[exp] !== undefined) {
+            counts[exp]++;
         }
-
-        return currentExpression;
+        await new Promise((r) => setTimeout(r, 65));
     }
 
-    return "Neutral";
+    // Determine the winning expression (prioritizing specific emotion if detected >= 2 times)
+    let bestExpression = "Neutral";
+    if (counts.sad >= 2) {
+        bestExpression = "sad";
+    } else if (counts.happy >= 2) {
+        bestExpression = "happy";
+    } else if (counts.surprised >= 2) {
+        bestExpression = "surprised";
+    } else {
+        bestExpression = Object.keys(counts).reduce((a, b) => counts[a] >= counts[b] ? a : b, "Neutral");
+    }
+
+    if (setExpression) {
+        setExpression(bestExpression);
+    }
+
+    return bestExpression;
+};
+
+// Cleanup function to stop camera and close landmarker instance
+export const stop = ({ landmarkerRef, streamRef, videoRef }) => {
+    if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+    }
+    if (videoRef.current) {
+        videoRef.current.srcObject = null;
+    }
+    if (landmarkerRef.current) {
+        landmarkerRef.current.close();
+        landmarkerRef.current = null;
+    }
 };
