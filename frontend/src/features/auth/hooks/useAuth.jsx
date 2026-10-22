@@ -70,10 +70,6 @@ const useAuth = () => {
     }
   };
 
-  useEffect(() => {
-    getMeApi();
-  }, []);
-
   return {
     user,
     loading,

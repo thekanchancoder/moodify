@@ -89,14 +89,22 @@ const userLogin = async (req,res) =>{
 const getMe = async (req,res) =>{
     try {
         const user = await userModel.findById(req.user.id)
+        if (!user) {
+            return res.status(401).json({ message: "User not found" })
+        }
         return res.status(200).json({
             message:"User found successfully",
-            user})
+            user
+        })
 
     } catch (error) {
         return res.status(500).json({message:"Something went wrong"})
     }
 }
+
+
+
+
 
 
 const userLogout = async (req,res) =>{

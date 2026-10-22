@@ -1,8 +1,9 @@
 import axios from "axios";
 
 const API=axios.create({
-    baseURL:"https://moodify-38d0.onrender.com/api/auth",
-    withCredentials:true
+    baseURL:"http://localhost:3000/api/auth",
+    withCredentials:true,
+    timeout: 8000
 })
 
 export async function registerUser({username,email,password}){
